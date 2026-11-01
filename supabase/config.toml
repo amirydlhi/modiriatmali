@@ -1,0 +1,4 @@
+
+
+[functions.blu-sms-ingest]
+verify_jwt = false
