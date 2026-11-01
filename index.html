@@ -1,0 +1,146 @@
+<!doctype html>
+<html lang="fa-IR" dir="rtl">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <meta name="theme-color" content="#0593C6" />
+  <meta name="color-scheme" content="light" />
+  <meta name="description" content="تراز؛ مدیریت ساده و تصویری حقوق، هزینه‌ها و پس‌انداز شخصی" />
+  <title>تراز | مدیریت مالی شخصی</title>
+  <link rel="preload" href="fonts/Pinar-DS3-Regular.ttf" as="font" type="font/ttf" crossorigin>
+  <link rel="preload" href="fonts/Pinar-DS3-Medium.ttf" as="font" type="font/ttf" crossorigin>
+  <link rel="preload" href="fonts/Pinar-DS3-SemiBold.ttf" as="font" type="font/ttf" crossorigin>
+  <link rel="preload" href="fonts/Pinar-DS4-Black.ttf" as="font" type="font/ttf" crossorigin>
+  <link rel="stylesheet" href="style.css" />
+  <script src="config.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.9/dist/chart.umd.min.js"></script>
+</head>
+<body>
+  <div class="app-shell">
+    <header class="topbar">
+      <a class="brand" href="#top" aria-label="تراز">
+        <span class="brand-mark">ت</span>
+        <span><strong>تراز</strong><small>مدیریت مالی شخصی</small></span>
+      </a>
+      <div class="top-actions">
+        <span id="connectionStatus" class="status-pill"><i></i> در حال بررسی اتصال</span>
+        <button id="settingsBtn" class="icon-btn" type="button" title="تنظیمات" aria-label="تنظیمات">⚙</button>
+        <button id="logoutBtn" class="text-btn hidden" type="button">خروج</button>
+      </div>
+    </header>
+
+    <main id="top">
+      <section id="bootFallback" class="center-panel" aria-live="polite">
+        <div class="panel-icon">☁</div>
+        <p class="eyebrow">تراز</p>
+        <h1 id="bootFallbackTitle">در حال راه‌اندازی برنامه...</h1>
+        <p id="bootFallbackText" class="muted intro">لطفاً چند لحظه صبر کنید.</p>
+      </section>
+      <section id="configView" class="center-panel hidden">
+        <div class="panel-icon">☁</div>
+        <p class="eyebrow">راه‌اندازی اولیه</p>
+        <h1>اتصال امن به فضای ابری</h1>
+        <p class="muted intro">برای ذخیره دائمی اطلاعات، نشانی پروژه Supabase و کلید عمومی آن را وارد کنید. این مرحله فقط یک‌بار روی هر مرورگر لازم است؛ برای ماندگاری تنظیمات پس از پاک شدن داده‌های مرورگر، مقادیر را در فایل <code>config.js</code> نیز قرار دهید.</p>
+        <form id="configForm" class="form-stack">
+          <label>نشانی پروژه Supabase<input id="supabaseUrl" type="url" placeholder="https://xxxxx.supabase.co" required autocomplete="url"></label>
+          <label>کلید عمومی اتصال (Publishable Key)<textarea id="supabaseKey" rows="3" placeholder="کلید عمومی پروژه" required spellcheck="false"></textarea></label>
+          <button class="primary-btn" type="submit">اتصال و ادامه</button>
+        </form>
+        <p class="tiny muted">فقط کلید عمومی (anon/publishable) مجاز است؛ هرگز service_role key را در سایت قرار ندهید.</p>
+      </section>
+
+      <section id="authView" class="center-panel hidden">
+        <div class="panel-icon">◈</div>
+        <p class="eyebrow">حساب شخصی شما</p>
+        <h1 id="authTitle">ورود به تراز</h1>
+        <p class="muted intro">اطلاعات مالی شما در فضای ابری ذخیره می‌شود و فقط با حساب خودتان قابل دسترسی است.</p>
+        <form id="authForm" class="form-stack">
+          <label>ایمیل<input id="authEmail" type="email" placeholder="name@example.com" required autocomplete="email"></label>
+          <label>رمز عبور<input id="authPassword" type="password" placeholder="حداقل ۸ کاراکتر" required minlength="8" autocomplete="current-password"></label>
+          <button class="primary-btn" id="authSubmit" type="submit">ورود</button>
+        </form>
+        <button id="authModeBtn" class="link-btn" type="button">حساب ندارید؟ ایجاد حساب</button>
+        <p class="tiny muted">پس از ورود، نشست شما روی همین دستگاه حفظ می‌شود و نیازی به ورود روزانه نیست.</p>
+      </section>
+
+      <section id="dashboardView" class="hidden">
+        <div class="page-heading">
+          <div>
+            <p class="eyebrow">نمای کلی وضعیت مالی</p>
+            <h1>خلاصه حساب شما</h1>
+            <p class="muted" id="welcomeText">درآمد، هزینه و پس‌انداز خود را یک‌جا مدیریت کنید. تاریخ‌ها شمسی و همه مبالغ به تومان هستند.</p>
+          </div>
+          <div class="month-control"><label for="monthPicker">ماه شمسی</label><input id="monthPicker" type="text" inputmode="numeric" autocomplete="off" placeholder="۱۴۰۵/۰۸" aria-describedby="monthLabel"><small id="monthLabel" class="month-caption">انتخاب ماه بر اساس تقویم ایران</small></div>
+        </div>
+
+        <section class="summary-grid" aria-label="خلاصه مالی">
+          <article class="summary-card income-card"><div class="card-top"><span>حقوق و درآمد</span><span class="metric-icon">＋</span></div><strong id="incomeTotal" class="metric">۰</strong><small>مجموع دریافتی · تومان</small></article>
+          <article class="summary-card expense-card"><div class="card-top"><span>مجموع هزینه‌ها</span><span class="metric-icon">−</span></div><strong id="expenseTotal" class="metric">۰</strong><small>هزینه‌های عادی و ثابت · تومان</small></article>
+          <article class="summary-card reserved-card"><div class="card-top"><span>مبالغ کنارگذاشته‌شده</span><span class="metric-icon">▤</span></div><strong id="reservedTotal" class="metric">۰</strong><small>تعهدها و مبالغ رزروشده · تومان</small></article>
+          <article class="summary-card savings-card"><div class="card-top"><span>پس‌انداز</span><span class="metric-icon">↗</span></div><strong id="savingsTotal" class="metric">۰</strong><small>مجموع پس‌انداز · تومان</small></article>
+          <article class="summary-card balance-card"><div class="card-top"><span>موجودی باقی‌مانده</span><span class="metric-icon">＝</span></div><strong id="balanceTotal" class="metric">۰</strong><small>پس از هزینه و پس‌انداز · تومان</small></article>
+        </section>
+
+        <section class="quick-actions">
+          <div><h2>ثبت اطلاعات</h2><p class="muted">هر مورد را برای ماه انتخاب‌شده اضافه کنید.</p></div>
+          <div class="action-buttons">
+            <button class="action-btn action-income" data-add="income">＋ ثبت حقوق</button>
+            <button class="action-btn" data-add="expense">＋ ثبت هزینه</button>
+            <button class="action-btn" data-add="fixed">＋ هزینه ثابت</button>
+            <button class="action-btn" data-add="reserved">＋ کنارگذاری مبلغ</button>
+            <button class="action-btn" data-add="saving">＋ ثبت پس‌انداز</button>
+          </div>
+        </section>
+
+                <section id="bluPendingSection" class="pending-panel hidden" aria-live="polite">
+          <div class="section-heading"><div><h2>تراکنش‌های بلو در انتظار تأیید</h2><p class="muted">پیامک‌های شناسایی‌شده؛ عنوان و دسته‌بندی را بررسی کن و سپس ثبت نهایی را بزن.</p></div><span id="bluPendingCount" class="pending-count">۰ مورد</span></div>
+          <div id="bluPendingList" class="pending-list"></div>
+        </section>
+<section class="records-panel">
+          <div class="section-heading"><div><h2>ریز اطلاعات ماه</h2><p class="muted">برای ویرایش یا حذف هر مورد از منوی آن استفاده کنید.</p></div><div class="record-tabs" role="tablist"><button class="tab active" data-tab="all">همه</button><button class="tab" data-tab="income">حقوق</button><button class="tab" data-tab="expense">هزینه‌ها</button><button class="tab" data-tab="reserved">کنارگذاری</button><button class="tab" data-tab="saving">پس‌انداز</button></div></div>
+          <div id="recordsList" class="records-list"></div>
+        </section>
+
+        <section class="charts-section">
+          <div class="section-heading"><div><h2>گزارش تصویری</h2><p class="muted">نمایی ساده از مخارج و نحوه استفاده از درآمد.</p></div></div>
+          <div class="charts-grid">
+            <article class="chart-card"><div class="chart-title"><h3>ترکیب هزینه‌ها</h3><span>بر اساس دسته‌بندی</span></div><div class="chart-wrap"><canvas id="expenseChart"></canvas></div><div id="expenseLegend" class="chart-legend"></div></article>
+            <article class="chart-card"><div class="chart-title"><h3>توزیع درآمد ماه</h3><span>تمام مبالغ به تومان</span></div><div class="chart-wrap"><canvas id="allocationChart"></canvas></div></article>
+          </div>
+        </section>
+        <footer class="footer-note">اطلاعات این صفحه به حساب ابری شما متصل است. <span id="syncText">آخرین وضعیت همگام‌سازی به وقت ایران: —</span></footer>
+      </section>
+    </main>
+  </div>
+
+  <dialog id="recordDialog" class="modal">
+    <form id="recordForm" method="dialog">
+      <div class="modal-head"><div><p class="eyebrow" id="modalEyebrow">ثبت اطلاعات</p><h2 id="modalTitle">مورد جدید</h2></div><button type="button" class="close-btn" id="closeModal" aria-label="بستن">×</button></div>
+      <div id="modalFields" class="form-grid"></div>
+      <p id="formError" class="form-error"></p>
+      <div class="modal-actions"><button type="button" class="secondary-btn" id="cancelModal">انصراف</button><button type="submit" class="primary-btn" id="saveRecordBtn">ذخیره اطلاعات</button></div>
+    </form>
+  </dialog>
+
+  <dialog id="settingsDialog" class="modal settings-modal">
+    <div class="modal-head"><div><p class="eyebrow">حساب و اتصال</p><h2>تنظیمات</h2></div><button type="button" class="close-btn" data-close-settings>×</button></div>
+    <div class="settings-content"><div class="settings-row"><span>وضعیت حساب</span><strong id="accountEmail">—</strong></div><div class="settings-row"><span>ذخیره‌سازی</span><strong>Supabase Cloud</strong></div><div class="sms-setup-box"><div class="sms-setup-title">اتصال پیامک بلو</div><p class="tiny muted">برای اتصال آیفون، یک کلید خصوصی بساز. کلید فقط یک‌بار نشان داده می‌شود.</p><button id="createBluSmsDeviceBtn" class="primary-btn full-btn" type="button">ساخت کلید اتصال آیفون</button><p id="bluSmsDeviceStatus" class="tiny muted" aria-live="polite">پس از اجرای SQL اتصال پیامک و انتشار تابع بلو، کلید را بساز.</p></div><p class="tiny muted">نشست ورود روی دستگاه حفظ می‌شود. پاک کردن کامل داده‌های سایت ممکن است شما را از حساب خارج کند، اما اطلاعات مالی ذخیره‌شده در Supabase حذف نمی‌شوند.</p><button id="changeConfigBtn" class="secondary-btn full-btn" type="button">تغییر اطلاعات اتصال Supabase</button></div>
+  </dialog>
+  <dialog id="bluSmsTokenDialog" class="modal settings-modal"><div class="modal-head"><div><p class="eyebrow">کلید خصوصی آیفون</p><h2>اتصال بلو به تراز</h2></div><button type="button" class="close-btn" id="closeBluSmsTokenDialog" aria-label="بستن">×</button></div><p class="tiny muted">این کلید فقط یک‌بار نمایش داده می‌شود. آن را در Shortcuts آیفون وارد کن و برای هیچ‌کس نفرست.</p><textarea id="bluSmsTokenValue" rows="4" readonly dir="ltr" spellcheck="false"></textarea><button id="copyBluSmsTokenBtn" type="button" class="primary-btn full-btn">کپی کلید اتصال</button><p id="bluSmsTokenCopyStatus" class="tiny muted" aria-live="polite"></p></dialog>
+  <div id="toast" class="toast" role="status" aria-live="polite"></div>
+  <script>
+    // If the module cannot start (for example when opened as file://), show a useful hint instead of a blank page.
+    window.setTimeout(() => {
+      if (window.__TARAZ_APP_STARTED) return;
+      const title = document.getElementById('bootFallbackTitle');
+      const message = document.getElementById('bootFallbackText');
+      if (!title || !message) return;
+      title.textContent = 'برنامه اجرا نشد';
+      message.textContent = location.protocol === 'file:'
+        ? 'این برنامه را با دوبار کلیک روی index.html اجرا نکنید. فایل RUN-LOCAL.bat را اجرا کنید یا پوشه را با یک وب‌سرور محلی باز کنید.'
+        : 'فایل app.js بارگذاری نشده یا دسترسی اینترنت برای دریافت کتابخانه‌های برنامه وجود ندارد. بررسی کنید app.js کنار index.html باشد و اینترنت وصل باشد.';
+    }, 4000);
+  </script>
+  <script type="module" src="app.js"></script>
+</body>
+</html>
